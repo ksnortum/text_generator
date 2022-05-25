@@ -11,11 +11,14 @@ class TextGenerator:
         self.bi_grams = []
         self.tokens = []
         self.markov_chain = {}
-        self.uppercase_letters = re.compile(r'[A-Z]')
-        self.sentence_ending_punctuation = re.compile(r'[.!?]$')
+        self.start_words = []
+        self.end_words = []
+        self.ending_punctuation = ('.', '!', '?')
 
     def run(self):
         self.load_corpus()
+        self.create_start_word_list()
+        self.create_end_words_list()
         self.create_markov_chain()
 
         for _ in range(10):
@@ -39,6 +42,15 @@ class TextGenerator:
         for head, list_of_tails in tails_by_head.items():
             tails = Counter(list_of_tails)
             self.markov_chain[head] = tails.most_common()
+
+    def create_start_word_list(self):
+        self.start_words = [word for word in self.tokens
+                            if word[0].isupper()
+                            and not word.endswith(self.ending_punctuation)]
+
+    def create_end_words_list(self):
+        self.end_words = [word for word in self.tokens
+                          if word.endswith(self.ending_punctuation)]
 
     # Not currently used
     def head_loop(self):
@@ -78,7 +90,7 @@ class TextGenerator:
         return ' '.join(sentence)
 
     def make_more_realistic_sentence(self) -> str:
-        head = self.find_first_word()
+        head = random.choice(self.start_words)  # self.find_first_word()
         sentence = [head]
 
         for _ in range(4):
@@ -87,18 +99,11 @@ class TextGenerator:
             head = next_word
 
         count = 0
-        # TODO, use endswith and list of punct
-        # TODO, choose from list of tokens ending with punct
-        while not self.sentence_ending_punctuation.search(sentence[-1]):
+        while not sentence[-1].endswith(self.ending_punctuation):
 
             # Give up after 100 tries
             if count > 100:
-                print("*** sentence too long")  # TODO testing
-                last_word = random.choice(self.tokens)
-                # TODO, use endswith and punct
-                # TODO, select for ending words list
-                if not self.sentence_ending_punctuation.search(last_word):
-                    last_word += "."
+                last_word = random.choice(self.end_words)
                 sentence.append(last_word)
                 break
 
@@ -106,18 +111,6 @@ class TextGenerator:
             count += 1
 
         return ' '.join(sentence)
-
-    # TODO make list of valid starting words once, then pick from that list
-    def find_first_word(self):
-        word = ''
-
-        # TODO, or just use word[0].isUpper()
-        # TODO, use word.endswith(<list of punct>)
-        while not self.uppercase_letters.match(word) \
-                or self.sentence_ending_punctuation.search(word):
-            word = random.choice(self.tokens)
-
-        return word
 
     def get_next_word(self, head: str) -> str:
         tails = [element[0] for element in self.markov_chain[head]]
