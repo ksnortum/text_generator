@@ -2,23 +2,21 @@ from nltk import WhitespaceTokenizer
 from nltk.util import bigrams
 from collections import Counter, defaultdict
 import random
-import re
 
 
 class TextGenerator:
+
+    ENDING_PUNCTUATION = ('.', '!', '?')
 
     def __init__(self):
         self.bi_grams = []
         self.tokens = []
         self.markov_chain = {}
         self.start_words = []
-        self.end_words = []
-        self.ending_punctuation = ('.', '!', '?')
 
     def run(self):
         self.load_corpus()
         self.create_start_word_list()
-        self.create_end_words_list()
         self.create_markov_chain()
 
         for _ in range(10):
@@ -46,11 +44,7 @@ class TextGenerator:
     def create_start_word_list(self):
         self.start_words = [word for word in self.tokens
                             if word[0].isupper()
-                            and not word.endswith(self.ending_punctuation)]
-
-    def create_end_words_list(self):
-        self.end_words = [word for word in self.tokens
-                          if word.endswith(self.ending_punctuation)]
+                            and not word.endswith(self.ENDING_PUNCTUATION)]
 
     # Not currently used
     def head_loop(self):
@@ -90,25 +84,13 @@ class TextGenerator:
         return ' '.join(sentence)
 
     def make_more_realistic_sentence(self) -> str:
-        head = random.choice(self.start_words)  # self.find_first_word()
+        head = random.choice(self.start_words)
         sentence = [head]
 
-        for _ in range(4):
+        while len(sentence) < 5 or not sentence[-1].endswith(self.ENDING_PUNCTUATION):
             next_word = self.get_next_word(head)
             sentence.append(next_word)
             head = next_word
-
-        count = 0
-        while not sentence[-1].endswith(self.ending_punctuation):
-
-            # Give up after 100 tries
-            if count > 100:
-                last_word = random.choice(self.end_words)
-                sentence.append(last_word)
-                break
-
-            sentence.append(self.get_next_word(head))
-            count += 1
 
         return ' '.join(sentence)
 
